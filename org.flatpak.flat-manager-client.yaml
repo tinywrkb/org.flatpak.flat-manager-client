@@ -1,0 +1,56 @@
+app-id: org.flatpak.flat-manager-client
+runtime: org.freedesktop.Sdk
+runtime-version: '21.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+command: flat-manager-client
+finish-args:
+  - --allow=devel
+# TODO: test if this is actually needed for libfuse or can be dropped
+  - --device=all
+  - --filesystem=host
+  - --share=network
+  - --talk-name=org.freedesktop.Flatpak
+  - --talk-name=org.freedesktop.Flatpak.*
+cleanup:
+  - /include
+  - lib/pkgconfig
+  - '*.a'
+  - '*.la'
+modules:
+  - name: flat-manager
+    buildsystem: simple
+    build-commands:
+      - install -Dm755 flat-manager-client -t /app/bin/
+    sources:
+      - type: git
+        url: https://github.com/flatpak/flat-manager
+        branch: master
+        commit: f2c1f719b35cb48b5d2b7282b66c8a7e166147b7
+    modules:
+      - python-gobject/python-gobject.json
+      - python-setuptools-scm/python-setuptools-scm.json
+      - python-dependencies.json
+      - name: ostree
+        config-opts:
+          - --libexec=/app/lib
+        sources:
+          - type: archive
+            url: https://github.com/ostreedev/ostree/releases/download/v2021.5/libostree-2021.5.tar.xz
+            sha256: b45a32ded72c9fb6d2ab508adeae0306e4e2bb348db152f3d1b3708375829e1f
+            x-checker-data:
+              type: anitya
+              project-id: 10899
+              stable-only: true
+              url-template: https://github.com/ostreedev/ostree/releases/download/v$version/libostree-$version.tar.xz
+        cleanup:
+          - /bin/ostree
+          - /etc
+          - /lib/libostree
+          - /lib/ostree
+          - /lib/tmpfiles.d
+          - /share
+        modules:
+          - breezy/breezy.json
+          - fuse/fuse2.json
